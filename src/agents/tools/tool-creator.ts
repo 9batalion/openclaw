@@ -1,4 +1,3 @@
-import type { AgentTool } from "@mariozechner/pi-agent-core";
 import { Type } from "@sinclair/typebox";
 import { runInNewContext, type Context } from "node:vm";
 import type { OpenClawConfig } from "../../config/config.js";
@@ -92,6 +91,7 @@ function validateParametersSchema(parametersJson: string): Record<string, unknow
   } catch (error) {
     throw new Error(
       `Invalid parameters schema JSON: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
     );
   }
 
@@ -179,10 +179,11 @@ function executeToolCode(
     return result;
   } catch (error) {
     if (error instanceof Error && error.message.includes("timeout")) {
-      throw new Error(`Tool execution timed out after ${timeoutSeconds} seconds`);
+      throw new Error(`Tool execution timed out after ${timeoutSeconds} seconds`, { cause: error });
     }
     throw new Error(
       `Tool execution failed: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
     );
   }
 }
@@ -258,6 +259,7 @@ export function createToolCreatorTool(options?: {
           } catch (error) {
             throw new Error(
               `Dynamic tool '${name}' execution failed: ${error instanceof Error ? error.message : String(error)}`,
+              { cause: error },
             );
           }
         },
