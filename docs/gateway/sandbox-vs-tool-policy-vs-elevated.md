@@ -90,7 +90,7 @@ Available groups:
 - `group:sessions`: `sessions_list`, `sessions_history`, `sessions_send`, `sessions_spawn`, `session_status`
 - `group:memory`: `memory_search`, `memory_get`
 - `group:ui`: `browser`, `canvas`
-- `group:automation`: `cron`, `gateway`
+- `group:automation`: `cron`, `gateway`, `tool_create`
 - `group:messaging`: `message`
 - `group:nodes`: `nodes`
 - `group:openclaw`: all built-in OpenClaw tools (excludes provider plugins)
