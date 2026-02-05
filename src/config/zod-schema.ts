@@ -3,6 +3,7 @@ import { ToolsSchema } from "./zod-schema.agent-runtime.js";
 import { AgentsSchema, AudioSchema, BindingsSchema, BroadcastSchema } from "./zod-schema.agents.js";
 import { ApprovalsSchema } from "./zod-schema.approvals.js";
 import { HexColorSchema, ModelsConfigSchema } from "./zod-schema.core.js";
+import { FederationConfigSchema } from "./zod-schema.federation.js";
 import { HookMappingSchema, HooksGmailSchema, InternalHooksSchema } from "./zod-schema.hooks.js";
 import { ChannelsSchema } from "./zod-schema.providers.js";
 import { CommandsSchema, MessagesSchema, SessionSchema } from "./zod-schema.session.js";
@@ -528,6 +529,7 @@ export const OpenClawSchema = z
       })
       .strict()
       .optional(),
+    federation: FederationConfigSchema,
   })
   .strict()
   .superRefine((cfg, ctx) => {
