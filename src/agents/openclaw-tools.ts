@@ -8,6 +8,7 @@ import { createBrowserTool } from "./tools/browser-tool.js";
 import { createCanvasTool } from "./tools/canvas-tool.js";
 import { createCronTool } from "./tools/cron-tool.js";
 import { createGatewayTool } from "./tools/gateway-tool.js";
+import { createGitHubTool } from "./tools/github-tool.js";
 import { createImageTool } from "./tools/image-tool.js";
 import { createMessageTool } from "./tools/message-tool.js";
 import { createNodesTool } from "./tools/nodes-tool.js";
@@ -143,6 +144,15 @@ export function createOpenClawTools(options?: {
     ...(imageTool ? [imageTool] : []),
     ...(toolCreatorTool ? [toolCreatorTool] : []),
   ];
+
+  // Add GitHub tool
+  const githubTool = createGitHubTool({
+    config: options?.config,
+    sandboxed: options?.sandboxed,
+  });
+  if (githubTool) {
+    tools.push(githubTool);
+  }
 
   const pluginTools = resolvePluginTools({
     context: {

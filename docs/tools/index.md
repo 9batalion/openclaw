@@ -147,6 +147,7 @@ Available groups:
 - `group:sessions`: `sessions_list`, `sessions_history`, `sessions_send`, `sessions_spawn`, `session_status`
 - `group:memory`: `memory_search`, `memory_get`
 - `group:web`: `web_search`, `web_fetch`
+- `group:github`: `github_project`
 - `group:ui`: `browser`, `canvas`
 - `group:automation`: `cron`, `gateway`, `tool_create`
 - `group:messaging`: `message`
@@ -256,6 +257,27 @@ Notes:
 - For JS-heavy sites, prefer the browser tool.
 - See [Web tools](/tools/web) for setup.
 - See [Firecrawl](/tools/firecrawl) for the optional anti-bot fallback.
+
+### `github_project`
+
+Interact with GitHub repositories: read issues, pull requests, files, commits; create issues; search code.
+
+Core actions:
+
+- `connect` (set repository context)
+- `repo_info`, `list_issues`, `get_issue`, `create_issue`
+- `list_prs`, `get_pr`
+- `list_files`, `get_file`
+- `list_branches`, `list_commits`, `search_code`
+- `list_releases`, `project_list`
+
+Notes:
+
+- Requires `GITHUB_TOKEN` environment variable or `tools.github.token` for authentication
+- Public repositories can be accessed without authentication (read-only)
+- Use `connect` action first to set repository context
+- Write operations (e.g., `create_issue`) require token with write permissions
+- See [GitHub Integration](/tools/github) for detailed documentation
 
 ### `browser`
 
