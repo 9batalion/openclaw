@@ -447,4 +447,15 @@ export type ToolsConfig = {
       deny?: string[];
     };
   };
+  /** Dynamic tool creator configuration. */
+  toolCreator?: {
+    /** Enable dynamic tool creation (default: false for security). */
+    enabled?: boolean;
+    /** Allow persistent tools (saved as plugins) (default: false). */
+    allowPersist?: boolean;
+    /** Maximum execution timeout for created tools in seconds (default: 30). */
+    timeoutSeconds?: number;
+    /** Allowed built-in modules for tool code (default: ["Math", "JSON", "Date"]). */
+    allowedModules?: string[];
+  };
 };

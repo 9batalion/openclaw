@@ -148,7 +148,7 @@ Available groups:
 - `group:memory`: `memory_search`, `memory_get`
 - `group:web`: `web_search`, `web_fetch`
 - `group:ui`: `browser`, `canvas`
-- `group:automation`: `cron`, `gateway`
+- `group:automation`: `cron`, `gateway`, `tool_create`
 - `group:messaging`: `message`
 - `group:nodes`: `nodes`
 - `group:openclaw`: all built-in OpenClaw tools (excludes provider plugins)
@@ -423,6 +423,69 @@ Notes:
 
 - Use `delayMs` (defaults to 2000) to avoid interrupting an in-flight reply.
 - `restart` is disabled by default; enable with `commands.restart: true`.
+
+### `tool_create`
+
+Dynamically create custom tools at runtime. This meta-tool allows the AI agent to extend its own capabilities by defining new tools with custom parameters and implementation code.
+
+Core parameters:
+
+- `name` (required; snake_case format, e.g., `my_custom_tool`)
+- `description` (required; clear description of what the tool does)
+- `parameters` (required; JSON string defining the TypeBox parameter schema)
+- `code` (required; JavaScript/TypeScript implementation code that has access to `params` object)
+- `persist` (optional; if true, saves the tool as a plugin for future sessions; default: false)
+
+Notes:
+
+- **Disabled by default for security**; enable via `tools.toolCreator.enabled: true`.
+- Tools are executed in a sandboxed environment with limited access to built-in modules.
+- Default allowed modules: `Math`, `JSON`, `Date`; configure via `tools.toolCreator.allowedModules`.
+- Execution timeout defaults to 30 seconds; configure via `tools.toolCreator.timeoutSeconds`.
+- Created tools are available only for the current session unless `persist: true` (requires `tools.toolCreator.allowPersist: true`).
+- Tool names must be unique and follow snake_case format (lowercase letters, numbers, underscores).
+- The code has access to a `params` object and must return a result object.
+- Supports async operations via Promises.
+
+Example usage:
+
+```json
+{
+  "name": "calculate_fibonacci",
+  "description": "Calculate the nth Fibonacci number",
+  "parameters": "{\"n\": {\"type\": \"number\", \"description\": \"Position in Fibonacci sequence\"}}",
+  "code": "const fib = (n) => n <= 1 ? n : fib(n-1) + fib(n-2); return { result: fib(params.n) };",
+  "persist": false
+}
+```
+
+Security considerations:
+
+- Blocked modules: `fs`, `child_process`, `net`, `http`, `https`, and other potentially dangerous Node.js APIs.
+- Execution is isolated in a VM context with limited globals.
+- Custom timeout prevents infinite loops or long-running operations.
+- All tool creation attempts should be logged for audit purposes.
+
+Configuration:
+
+```json5
+{
+  tools: {
+    toolCreator: {
+      enabled: true,           // Enable dynamic tool creation
+      allowPersist: false,     // Allow saving tools as plugins
+      timeoutSeconds: 30,      // Max execution time per tool
+      allowedModules: [        // Whitelisted built-in modules
+        "Math",
+        "JSON",
+        "Date",
+        "crypto",
+        "fetch"
+      ]
+    }
+  }
+}
+```
 
 ### `sessions_list` / `sessions_history` / `sessions_send` / `sessions_spawn` / `session_status`
 
