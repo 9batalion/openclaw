@@ -2198,7 +2198,7 @@ Tool groups (shorthands) work in **global** and **per-agent** tool policies:
 - `group:memory`: `memory_search`, `memory_get`
 - `group:web`: `web_search`, `web_fetch`
 - `group:ui`: `browser`, `canvas`
-- `group:automation`: `cron`, `gateway`
+- `group:automation`: `cron`, `gateway`, `tool_create`
 - `group:messaging`: `message`
 - `group:nodes`: `nodes`
 - `group:openclaw`: all built-in OpenClaw tools (excludes provider plugins)
