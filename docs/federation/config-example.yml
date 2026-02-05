@@ -1,0 +1,58 @@
+# Agent Federation Configuration Example
+
+# This is an example configuration for OpenClaw Agent Federation.
+# Copy the relevant sections to your main openclaw.yml configuration file.
+
+# Basic federation setup (minimal)
+federation:
+  enabled: true
+  serverId: "my-server-001"
+  peers: []
+
+# Federation with peers
+# federation:
+#   enabled: true
+#   serverId: "main-server"
+#   defaultTimeoutMs: 30000
+#   allowDynamicPeers: true
+#   requireAuth: false
+#   peers:
+#     - id: "research-agent"
+#       name: "Research Specialist"
+#       url: "ws://192.168.1.100:18789"
+#       token: "your-secret-token"
+#       agentId: "agent-research-01"
+#       capabilities:
+#         - "web-search"
+#         - "summarization"
+#         - "fact-checking"
+#       description: "Specialized in research and information gathering"
+#       enabled: true
+#       timeoutMs: 45000
+#
+#     - id: "data-agent"
+#       name: "Data Analysis Agent"
+#       url: "ws://192.168.1.101:18789"
+#       token: "your-secret-token"
+#       agentId: "agent-data-01"
+#       capabilities:
+#         - "data-analysis"
+#         - "visualization"
+#         - "statistics"
+#       description: "Specialized in data processing and analysis"
+#       enabled: true
+
+# For secure connections (recommended for production):
+# federation:
+#   enabled: true
+#   serverId: "prod-server"
+#   requireAuth: true
+#   peers:
+#     - id: "secure-agent"
+#       name: "Secure Agent"
+#       url: "wss://secure-agent.example.com"  # Note: wss:// for TLS
+#       token: "${FEDERATION_TOKEN}"  # Use environment variable
+#       agentId: "agent-secure-01"
+#       capabilities:
+#         - "secure-processing"
+#       enabled: true
