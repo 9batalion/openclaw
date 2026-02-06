@@ -20,6 +20,32 @@ export async function start(state: CronServiceState) {
       return;
     }
     await ensureLoaded(state);
+    const now = state.deps.nowMs();
+    const CATCH_UP_WINDOW_MS = 6 * 60 * 60 * 1000; // 6 hours
+
+    // Check for missed jobs during downtime
+    const missedJobs = (state.store?.jobs ?? []).filter((job) => {
+      if (!job.enabled) {
+        return false;
+      }
+      const nextAt = job.state.nextRunAtMs;
+      const lastRan = job.state.lastRunAtMs;
+      // Job was scheduled in the past and has run before
+      if (typeof nextAt === "number" && typeof lastRan === "number" && nextAt < now) {
+        const age = now - nextAt;
+        return age <= CATCH_UP_WINDOW_MS;
+      }
+      return false;
+    });
+
+    for (const job of missedJobs) {
+      state.deps.log.warn(
+        { jobId: job.id, name: job.name, nextRunAtMs: job.state.nextRunAtMs },
+        "cron: catch-up — running missed job",
+      );
+      await executeJob(state, job, now, { forced: false });
+    }
+
     recomputeNextRuns(state);
     await persist(state);
     armTimer(state);
@@ -28,6 +54,7 @@ export async function start(state: CronServiceState) {
         enabled: true,
         jobs: state.store?.jobs.length ?? 0,
         nextWakeAtMs: nextWakeAtMs(state) ?? null,
+        catchUpJobs: missedJobs.length,
       },
       "cron: started",
     );
