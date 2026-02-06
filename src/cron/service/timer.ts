@@ -70,6 +70,12 @@ export async function runDueJobs(state: CronServiceState) {
     const next = j.state.nextRunAtMs;
     return typeof next === "number" && now >= next;
   });
+  if (due.length > 0) {
+    state.deps.log.debug(
+      { count: due.length, jobs: due.map((j) => ({ id: j.id, name: j.name })) },
+      "cron: running due jobs",
+    );
+  }
   for (const job of due) {
     await executeJob(state, job, now, { forced: false });
   }
