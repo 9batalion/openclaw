@@ -3,11 +3,23 @@ import type { CronServiceState } from "./state.js";
 import { migrateLegacyCronPayload } from "../payload-migration.js";
 import { loadCronStore, saveCronStore } from "../store.js";
 import { inferLegacyName, normalizeOptionalText } from "./normalize.js";
+import { recomputeNextRuns } from "./jobs.js";
 
 const storeCache = new Map<string, { version: 1; jobs: CronJob[] }>();
 
-export async function ensureLoaded(state: CronServiceState) {
-  if (state.store) {
+export async function ensureLoaded(
+  state: CronServiceState,
+  opts?: { forceReload?: boolean; skipRecompute?: boolean },
+) {
+  const forceReload = opts?.forceReload === true;
+  const skipRecompute = opts?.skipRecompute === true;
+
+  if (forceReload) {
+    state.store = null;
+    storeCache.delete(state.deps.storePath);
+  }
+
+  if (state.store && !forceReload) {
     return;
   }
   const cached = storeCache.get(state.deps.storePath);
@@ -47,6 +59,9 @@ export async function ensureLoaded(state: CronServiceState) {
   storeCache.set(state.deps.storePath, state.store);
   if (mutated) {
     await persist(state);
+  }
+  if (!skipRecompute) {
+    recomputeNextRuns(state);
   }
 }
 

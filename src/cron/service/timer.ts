@@ -1,11 +1,12 @@
 import type { HeartbeatRunResult } from "../../infra/heartbeat-wake.js";
 import type { CronJob } from "../types.js";
 import type { CronEvent, CronServiceState } from "./state.js";
-import { computeJobNextRunAtMs, nextWakeAtMs, resolveJobPayloadTextForMain } from "./jobs.js";
+import { computeJobNextRunAtMs, nextWakeAtMs, recomputeNextRuns, resolveJobPayloadTextForMain } from "./jobs.js";
 import { locked } from "./locked.js";
 import { ensureLoaded, persist } from "./store.js";
 
 const MAX_TIMEOUT_MS = 2 ** 31 - 1;
+const WATCHDOG_INTERVAL_MS = 60_000; // 60 seconds
 
 export function armTimer(state: CronServiceState) {
   if (state.timer) {
@@ -17,6 +18,7 @@ export function armTimer(state: CronServiceState) {
   }
   const nextAt = nextWakeAtMs(state);
   if (!nextAt) {
+    armWatchdogTimer(state);
     return;
   }
   const delay = Math.max(nextAt - state.deps.nowMs(), 0);
@@ -28,6 +30,7 @@ export function armTimer(state: CronServiceState) {
     });
   }, clampedDelay);
   state.timer.unref?.();
+  armWatchdogTimer(state);
 }
 
 export async function onTimer(state: CronServiceState) {
@@ -37,8 +40,13 @@ export async function onTimer(state: CronServiceState) {
   state.running = true;
   try {
     await locked(state, async () => {
-      await ensureLoaded(state);
+      // Load persisted state with original nextRunAtMs values
+      await ensureLoaded(state, { forceReload: true, skipRecompute: true });
+      // Run jobs that are due based on their original persisted nextRunAtMs
       await runDueJobs(state);
+      // THEN recompute nextRunAtMs for the next cycle
+      recomputeNextRuns(state);
+      // Persist the updated state
       await persist(state);
       armTimer(state);
     });
@@ -62,6 +70,12 @@ export async function runDueJobs(state: CronServiceState) {
     const next = j.state.nextRunAtMs;
     return typeof next === "number" && now >= next;
   });
+  if (due.length > 0) {
+    state.deps.log.debug(
+      { count: due.length, jobs: due.map((j) => ({ id: j.id, name: j.name })) },
+      "cron: running due jobs",
+    );
+  }
   for (const job of due) {
     await executeJob(state, job, now, { forced: false });
   }
@@ -251,6 +265,43 @@ export function stopTimer(state: CronServiceState) {
     clearTimeout(state.timer);
   }
   state.timer = null;
+  if (state.watchdogTimer) {
+    clearTimeout(state.watchdogTimer);
+  }
+  state.watchdogTimer = null;
+}
+
+export function armWatchdogTimer(state: CronServiceState) {
+  if (state.watchdogTimer) {
+    clearTimeout(state.watchdogTimer);
+  }
+  state.watchdogTimer = null;
+  if (!state.deps.cronEnabled) {
+    return;
+  }
+  state.watchdogTimer = setTimeout(() => {
+    void onWatchdog(state).catch((err) => {
+      state.deps.log.error({ err: String(err) }, "cron: watchdog tick failed");
+    });
+  }, WATCHDOG_INTERVAL_MS);
+  state.watchdogTimer.unref?.();
+}
+
+async function onWatchdog(state: CronServiceState) {
+  const nextAt = nextWakeAtMs(state);
+  if (!nextAt) {
+    armWatchdogTimer(state);
+    return;
+  }
+  const now = state.deps.nowMs();
+  if (nextAt <= now) {
+    state.deps.log.warn(
+      { nextWakeAtMs: nextAt, nowMs: now, drift: now - nextAt },
+      "cron: watchdog self-heal — main timer missed its wake time",
+    );
+    armTimer(state);
+  }
+  armWatchdogTimer(state);
 }
 
 export function emit(state: CronServiceState, evt: CronEvent) {
